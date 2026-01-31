@@ -18,6 +18,7 @@ services:
       - ./src:/opt/airflow/dags/src
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - _PIP_ADDITIONAL_REQUIREMENTS=requests
 
   webserver:
     image: apache/airflow:2.7.1
@@ -32,3 +33,4 @@ services:
       - ./src:/opt/airflow/dags/src
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - _PIP_ADDITIONAL_REQUIREMENTS=requests
