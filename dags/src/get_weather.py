@@ -8,8 +8,8 @@ import os
 import logging
 
 
-API_KEY = Variable.get('OPEN_WEATHER_API_KEY')
-GCS_BUCKET = Variable.get('GCS_BUCKET')
+API_KEY = Variable.get('cc902318ffbf79879b6945e52faca267')
+GCS_BUCKET = Variable.get('data-cuaca-jakarta')
 
 def get_weather(**kwargs):
     """
