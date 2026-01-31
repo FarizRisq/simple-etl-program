@@ -8,7 +8,7 @@ import csv
 import logging
 
 
-GCS_BUCKET = Variable.get('GCS_BUCKET')
+GCS_BUCKET = Variable.get('data-cuaca-jakarta')
 
 def load_table(**kwargs):
     """
