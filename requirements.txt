@@ -1,3 +1,4 @@
 requests
 apache-airflow-providers-google
 pandas
+numpy
