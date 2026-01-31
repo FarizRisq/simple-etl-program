@@ -16,6 +16,7 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./src:/opt/airflow/dags/src
+      - ./data:/opt/airflow/data
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - _PIP_ADDITIONAL_REQUIREMENTS=requests
@@ -31,6 +32,7 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./src:/opt/airflow/dags/src
+      - ./data:/opt/airflow/data
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - _PIP_ADDITIONAL_REQUIREMENTS=requests
