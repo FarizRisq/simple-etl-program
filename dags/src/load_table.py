@@ -1,56 +1,42 @@
-from airflow.models import Variable
-from airflow.contrib.hooks.gcs_hook import GoogleCloudStorageHook
-from airflow.hooks.postgres_hook import PostgresHook
+from airflow.providers.google.cloud.hooks.gcs import GCSHook
+from pathlib import Path
 
-import os
-import numpy as np
-import csv
-import logging
-
-
-GCS_BUCKET = Variable.get('data-cuaca-jakarta')
-
-def load_table(**kwargs):
+def load_table(files: dict):
     """
-    Processes the json data, checks the types and enters into the
-    Postgres database.
+    files = {
+        "raw_file": "/tmp/weather/raw/xxx.json",
+        "csv_file": "/tmp/weather/clean/xxx.csv"
+    }
     """
 
-    pg_hook = PostgresHook(postgres_conn_id='weatherdb_postgres_conn')
-    gcs = GoogleCloudStorageHook('gcp_airflow_lab')
-    prev_task_id = 'transform_data'
+    BUCKET_NAME = "data-cuaca-jakarta"
+    DEST_FOLDER = "weatherapi/raw"
 
-    # Set source file
-    source_file_name = str(kwargs["execution_date"]) + '.csv'
-    source_dir_path = os.path.join(os.path.dirname(__file__),
-                                   '..', '..',
-                                   'data',
-                                   kwargs["dag"].dag_id,
-                                   prev_task_id)
-    source_full_path = os.path.join(source_dir_path, source_file_name)
+    raw_file = Path(files["raw_file"])
+    csv_file = Path(files["csv_file"])
 
-    # download from GCS
-    gcs_src_object = os.path.join(kwargs["dag"].dag_id, prev_task_id, source_file_name)
-    gcs.upload(GCS_BUCKET, 
-            gcs_src_object, 
-            source_full_path, 
-            mime_type='application/octet-stream')
-    logging.info("Successfully download file from GCS: gs://{}/{}".format(GCS_BUCKET, gcs_src_object))
+    gcs_hook = GCSHook(gcp_conn_id="google_cloud_default")
 
-    # open the csv source file and read it in
-    with open(source_full_path, 'r') as inputfile:
-        csv_reader = csv.reader(inputfile, delimiter=',')
-        for row in csv_reader:
-            insert_cmd = """INSERT INTO weather 
-                            (city, country, latitude, longitude,
-                            todays_date, humidity, pressure, 
-                            min_temp, max_temp, temp, weather)
-                            VALUES
-                            (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+    # =========================
+    # UPLOAD RAW JSON
+    # =========================
+    gcs_hook.upload(
+        bucket_name=BUCKET_NAME,
+        object_name=f"{DEST_FOLDER}/{raw_file.name}",
+        filename=str(raw_file)
+    )
 
-            pg_hook.run(insert_cmd, parameters=row)
-            logging.info("Successfully insert to database using command: {}".format(insert_cmd))
+    # =========================
+    # UPLOAD CLEAN CSV
+    # =========================
+    gcs_hook.upload(
+        bucket_name=BUCKET_NAME,
+        object_name=f"{DEST_FOLDER}/{csv_file.name}",
+        filename=str(csv_file)
+    )
 
-
-if __name__ == "__main__":
-    load_table()
+    print("===================================")
+    print("LOAD TO GCS SUCCESS ✅")
+    print(f"RAW  : gs://{BUCKET_NAME}/{DEST_FOLDER}/{raw_file.name}")
+    print(f"CSV  : gs://{BUCKET_NAME}/{DEST_FOLDER}/{csv_file.name}")
+    print("===================================")
