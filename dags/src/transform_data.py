@@ -1,93 +1,50 @@
-from airflow.models import Variable
-from airflow.contrib.hooks.gcs_hook import GoogleCloudStorageHook
-
-import os
 import json
-import numpy as np
-import csv
-import logging
+import pandas as pd
+from pathlib import Path
 
-
-GCS_BUCKET = Variable.get('data-cuaca-jakarta')
-
-def transform_data(**kwargs):
+def transform_weather(raw_file_path: str):
     """
-    Processes the json data, checks the types and save as csv
+    raw_file_path: path JSON dari extract_weather
     """
 
-    # Set source file
-    source_file_name = str(kwargs["execution_date"]) + '.json'
-    source_dir_path = os.path.join(os.path.dirname(__file__),
-                            '..', '..',
-                            'data',
-                            kwargs["dag"].dag_id,
-                            'get_weather')
-    source_full_path = os.path.join(source_dir_path, source_file_name)
+    RAW_FILE = Path(raw_file_path)
+    CLEAN_DIR = Path("/tmp/weather/clean")
+    CLEAN_DIR.mkdir(parents=True, exist_ok=True)
 
-    # download from GCS
-    gcs = GoogleCloudStorageHook('gcp_airflow_lab')
-    gcs_src_object = os.path.join(kwargs["dag"].dag_id, 'get_weather', source_file_name)
-    gcs.upload(GCS_BUCKET, 
-            gcs_src_object, 
-            source_full_path, 
-            mime_type='application/octet-stream')
-    logging.info("Successfully download file from GCS: gs://{}/{}".format(GCS_BUCKET, gcs_src_object))
+    # =========================
+    # READ RAW JSON
+    # =========================
+    with open(RAW_FILE, "r") as f:
+        raw_data = json.load(f)
 
-    # open the json datafile and read it in
-    with open(source_full_path, 'r') as inputfile:
-        doc = json.load(inputfile)
-        logging.info("Read from {}".format(source_full_path))
-        logging.info("Content: {}".format(doc))
+    # =========================
+    # TRANSFORM / CLEAN
+    # =========================
+    clean_data = {
+        "city": raw_data["location"]["name"],
+        "country": raw_data["location"]["country"],
+        "local_time": raw_data["location"]["localtime"],
+        "temperature_c": raw_data["current"]["temp_c"],
+        "feelslike_c": raw_data["current"]["feelslike_c"],
+        "humidity_pct": raw_data["current"]["humidity"],
+        "wind_kph": raw_data["current"]["wind_kph"],
+        "condition": raw_data["current"]["condition"]["text"]
+    }
 
-    # transform the data to the correct types and convert temp to celsius
-    city = str(doc['name'])
-    country = str(doc['sys']['country'])
-    lat = float(doc['coord']['lat'])
-    lon = float(doc['coord']['lon'])
-    humid = float(doc['main']['humidity'])
-    press = float(doc['main']['pressure'])
-    min_temp = float(doc['main']['temp_min']) - 273.15
-    max_temp = float(doc['main']['temp_max']) - 273.15
-    temp = float(doc['main']['temp']) - 273.15
-    weather = str(doc['weather'][0]['description'])
-    todays_date = str(kwargs["execution_date"]).split('T')[0]
+    df = pd.DataFrame([clean_data])
 
-    # check for nan's in the numeric values and then enter into the database
-    valid_data = True
-    for valid in np.isnan([lat, lon, humid, press, min_temp, max_temp, temp]):
-        if valid is False:
-            valid_data = False
-            raise ValueError('"Invalid data."')
-            break
+    # =========================
+    # SAVE CLEAN CSV
+    # =========================
+    csv_file = CLEAN_DIR / RAW_FILE.name.replace(".json", ".csv")
+    df.to_csv(csv_file, index=False)
 
-    row = [city, country, lat, lon, todays_date, humid, press, min_temp,
-           max_temp, temp, weather]
-    
-    # Save output file
-    dest_file_name = str(kwargs["execution_date"]) + '.csv'
-    dest_dir_path = os.path.join(os.path.dirname(__file__),
-                            '..', '..',
-                            'data',
-                            kwargs["dag"].dag_id,
-                            kwargs["task"].task_id)
-    if not os.path.exists(dest_dir_path):
-        os.makedirs(dest_dir_path)
-    dest_full_path = os.path.join(dest_dir_path, dest_file_name)
+    print(f"[TRANSFORM] Saved clean file: {csv_file}")
 
-    with open(dest_full_path, 'w') as outputfile:
-            writer = csv.writer(outputfile)
-            writer.writerow(row)
-    logging.info("Write to {}".format(dest_full_path))
-
-    # upload to GCS
-    gcs = GoogleCloudStorageHook('gcp_airflow_lab')
-    gcs_dest_object = os.path.join(kwargs["dag"].dag_id, kwargs["task"].task_id, dest_file_name)
-    gcs.upload(GCS_BUCKET, 
-            gcs_dest_object, 
-            dest_full_path, 
-            mime_type='application/octet-stream')
-    logging.info("Successfully write output file to GCS: gs://{}/{}".format(GCS_BUCKET, gcs_dest_object))
-
-
-if __name__ == "__main__":
-    transform_data()
+    # =========================
+    # RETURN FOR NEXT TASK
+    # =========================
+    return {
+        "raw_file": str(RAW_FILE),
+        "csv_file": str(csv_file)
+    }
