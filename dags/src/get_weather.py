@@ -1,13 +1,11 @@
 from airflow.models import Variable
-from airflow.contrib.hooks.gcs_hook import GoogleCloudStorageHook
-
 import requests
 import json
 from datetime import datetime
 from pathlib import Path
 
 def get_weather():
-    WEATHER_API_KEY = "872c8d4418b94c7f94431726260102"
+    WEATHER_API_KEY = Variable.get("WEATHER_API_KEY")
     CITY = "Jakarta"
 
     RAW_DIR = Path("/tmp/weather/raw")
@@ -36,3 +34,4 @@ def get_weather():
 
 if __name__ == "__main__":
     get_weather()
+
