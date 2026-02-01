@@ -12,9 +12,9 @@ import os
 
 # Define the default dag arguments.
 default_args = {
-    'owner': 'Aditya Satrya',
+    'owner': 'Fariz',
     'depends_on_past': False,
-    'email': ['aditya.satrya@gmail.com'],
+    'email': ['farizr.official@gmail.com'],
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 5,
