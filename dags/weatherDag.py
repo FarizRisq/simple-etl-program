@@ -27,7 +27,7 @@ default_args = {
 dag = DAG(
     dag_id='weatherDag',
     default_args=default_args,
-    start_date=datetime(2017, 8, 24),
+    start_date=datetime(2025, 8, 18),
     schedule_interval=timedelta(minutes=1440))
 
 
