@@ -47,7 +47,7 @@ with DAG(
     load = PythonOperator(
         task_id="load_table",
         python_callable=load_table,
-        op_args=["{{ ti.xcom_pull(task_ids='transform_weather') }}"],
+        provide_context=True,
     )
 
     extract >> transform >> load
