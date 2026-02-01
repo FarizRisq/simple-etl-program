@@ -17,9 +17,9 @@ services:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       # Hapus baris _PIP_ADDITIONAL_REQUIREMENTS yang lama, ganti jadi ini:
       - _PIP_REQUIREMENTS_FROM_FILE=/opt/airflow/requirements.txt
+      - AIRFLOW__WEBSERVER__SECRET_KEY=FPfzfEK9NDqGiGehVVpe_LJV5NuUVp7k9U1gLGzZyw8=
     volumes:
       - ./dags:/opt/airflow/dags
-      - ./src:/opt/airflow/dags/src
       - ./data:/opt/airflow/data
       - ./requirements.txt:/opt/airflow/requirements.txt # Tambahkan baris ini juga di volumes!
 
@@ -31,13 +31,13 @@ services:
       - "8080:8080"
     depends_on:
       - postgres
-      environment:
+    environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       # Hapus baris _PIP_ADDITIONAL_REQUIREMENTS yang lama, ganti jadi ini:
       - _PIP_REQUIREMENTS_FROM_FILE=/opt/airflow/requirements.txt
+      - AIRFLOW__WEBSERVER__SECRET_KEY=FPfzfEK9NDqGiGehVVpe_LJV5NuUVp7k9U1gLGzZyw8=
     volumes:
       - ./dags:/opt/airflow/dags
-      - ./src:/opt/airflow/dags/src
       - ./data:/opt/airflow/data
       - ./requirements.txt:/opt/airflow/requirements.txt # Tambahkan baris ini juga di volumes!
 

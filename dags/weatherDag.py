@@ -3,9 +3,10 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 
-from src.get_weather import get_weather
-from src.transform_data import transform_weather
-from src.load_table import load_table
+from weather_tasks.get_weather import get_weather
+from weather_tasks.transform_weather import transform_weather
+from weather_tasks.load_table import load_table
+
 
 # ===============================
 # DEFAULT ARGS
